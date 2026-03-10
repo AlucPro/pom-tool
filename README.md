@@ -18,7 +18,7 @@ If you want a Pomodoro timer that is:
 
 this is the one.
 
-![pom-tool terminal demo](./asset/pom.png)
+![pom-tool terminal demo](./asset/pom.gif)
 ![Bark notification demo](./asset/phone.jpg)
 
 ## Why people like it
