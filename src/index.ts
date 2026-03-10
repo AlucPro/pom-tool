@@ -82,10 +82,10 @@ async function main(): Promise<void> {
 
 function printHelp(): void {
   console.log(
-    renderPanel("pom-tool", [
-      `${label("Usage")}  ${style("pom <minutes>", "cyan")}        Start a Pomodoro timer`,
-      `       ${style("pom status", "cyan")}           Show Pomodoro averages`,
-      `       ${style("pom bark [--url URL]", "cyan")} Configure Bark notifications`,
+    renderKeyValuePanel("pom-tool", [
+      ["Usage", `${style("pom <minutes>", "cyan")}  Start a Pomodoro timer`],
+      ["", `${style("pom status", "cyan")}  Show Pomodoro averages`],
+      ["", `${style("pom bark [--url URL]", "cyan")}  Configure Bark notifications`],
     ]),
   );
 }
@@ -144,9 +144,9 @@ async function configureBark(args: string[]): Promise<void> {
   validateBarkUrl(barkUrl);
   await saveConfig({ ...currentConfig, barkUrl });
   console.log(
-    renderPanel("Bark", [
-      `${label("Status")} ${style("saved", "green")}`,
-      `${label("URL")}    ${maskBarkUrl(barkUrl)}`,
+    renderKeyValuePanel("Bark", [
+      ["Status", style("saved", "green")],
+      ["URL", maskBarkUrl(barkUrl)],
     ]),
   );
 }
@@ -199,10 +199,10 @@ async function runPomodoro(minutes: number): Promise<void> {
   const startedAt = new Date();
 
   console.log(
-    renderPanel("🍅 Pomodoro", [
-      `${label("Duration")} ${style(formatMinutes(minutes), "cyan")}`,
-      `${label("Started")}  ${formatClockTime(startedAt)}`,
-      `${label("Bark")}     ${config.barkUrl ? style("enabled", "green") : style("disabled", "gray")}`,
+    renderKeyValuePanel("🍅 Pomodoro", [
+      ["Duration", style(formatMinutes(minutes), "cyan")],
+      ["Started", formatClockTime(startedAt)],
+      ["Bark", config.barkUrl ? style("enabled", "green") : style("disabled", "gray")],
     ]),
   );
 
@@ -222,10 +222,10 @@ async function runPomodoro(minutes: number): Promise<void> {
 
   process.stdout.write("\n");
   console.log(
-    renderPanel("🍅 Completed", [
-      `${label("Logged")}   ${style(formatMinutes(minutes), "green")}`,
-      `${label("Finished")} ${formatClockTime(finishedAt)}`,
-      `${label("Saved")}    ${style("session recorded", "green")}`,
+    renderKeyValuePanel("🍅 Completed", [
+      ["Logged", style(formatMinutes(minutes), "green")],
+      ["Finished", formatClockTime(finishedAt)],
+      ["Saved", style("session recorded", "green")],
     ]),
   );
   await sendBarkNotification(
@@ -342,13 +342,13 @@ async function showStatus(): Promise<void> {
   const lastSession = getLastSession(sessions);
 
   console.log(
-    renderPanel("Pomodoro Status", [
-      `${label("Today")}     ${style(formatMinutesDecimal(todayTotal), "green")}`,
-      `${label("7d avg")}    ${style(`${formatMinutesDecimal(last7Total / 7)}/day`, "cyan")}`,
-      `${label("30d avg")}   ${style(`${formatMinutesDecimal(last30Total / 30)}/day`, "cyan")}`,
-      `${label("Sessions")}  ${style(String(sessions.length), "blue")}`,
-      `${label("Bark")}      ${config.barkUrl ? style("configured", "green") : style("not configured", "gray")}`,
-      `${label("Last done")} ${lastSession ? formatSessionTime(lastSession.completedAt) : style("none yet", "gray")}`,
+    renderKeyValuePanel("Pomodoro Status", [
+      ["Today", style(formatMinutesDecimal(todayTotal), "green")],
+      ["7d avg", style(`${formatMinutesDecimal(last7Total / 7)}/day`, "cyan")],
+      ["30d avg", style(`${formatMinutesDecimal(last30Total / 30)}/day`, "cyan")],
+      ["Sessions", style(String(sessions.length), "blue")],
+      ["Bark", config.barkUrl ? style("configured", "green") : style("not configured", "gray")],
+      ["Last done", lastSession ? formatSessionTime(lastSession.completedAt) : style("none yet", "gray")],
     ]),
   );
 }
@@ -417,10 +417,6 @@ function toIsoSeconds(date: Date): string {
   return date.toISOString().replace(/\.\d{3}Z$/, "Z");
 }
 
-function label(text: string): string {
-  return style(text.padEnd(9, " "), "gray");
-}
-
 function renderPanel(title: string, lines: string[]): string {
   const width = Math.max(
     title.length,
@@ -430,6 +426,26 @@ function renderPanel(title: string, lines: string[]): string {
   const header = `| ${style(title.padEnd(width, " "), "bold")} |`;
   const body = lines.map((line) => `| ${padAnsi(line, width)} |`);
   return [top, header, top, ...body, top].join("\n");
+}
+
+function renderKeyValuePanel(
+  title: string,
+  rows: Array<[labelText: string, valueText: string]>,
+): string {
+  const labelWidth = Math.max(...rows.map(([labelText]) => labelText.length));
+  const lines = rows.map(([labelText, valueText]) =>
+    renderKeyValueLine(labelText, valueText, labelWidth),
+  );
+  return renderPanel(title, lines);
+}
+
+function renderKeyValueLine(
+  labelText: string,
+  valueText: string,
+  labelWidth: number,
+): string {
+  const key = labelText ? style(labelText.padEnd(labelWidth, " "), "gray") : " ".repeat(labelWidth);
+  return `${key}  ${valueText}`;
 }
 
 function padAnsi(value: string, width: number): string {
