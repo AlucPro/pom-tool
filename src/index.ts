@@ -7,6 +7,7 @@ import path from "node:path";
 import process, { stdin as input, stdout as output } from "node:process";
 import readline from "node:readline/promises";
 import { promisify } from "node:util";
+import packageJson from "../package.json" with { type: "json" };
 
 type Config = {
   barkUrl?: string;
@@ -30,6 +31,7 @@ const ANSI = {
   green: "\u001b[32m",
   yellow: "\u001b[33m",
   blue: "\u001b[34m",
+  magenta: "\u001b[35m",
   cyan: "\u001b[36m",
   gray: "\u001b[90m",
 } as const;
@@ -56,6 +58,11 @@ async function main(): Promise<void> {
 
   if (command === "--help" || command === "-h" || command === "help") {
     printHelp();
+    return;
+  }
+
+  if (command === "-v" || command === "--version") {
+    printVersion();
     return;
   }
 
@@ -86,8 +93,13 @@ function printHelp(): void {
       ["Usage", `${style("pom <minutes>", "cyan")}  Start a Pomodoro timer`],
       ["", `${style("pom status", "cyan")}  Show Pomodoro averages`],
       ["", `${style("pom bark [--url URL]", "cyan")}  Configure Bark notifications`],
+      ["", `${style("pom -v", "cyan")}  Show current version`],
     ]),
   );
+}
+
+function printVersion(): void {
+  console.log(packageJson.version);
 }
 
 async function ensureDataDir(): Promise<void> {
@@ -196,15 +208,7 @@ function validateBarkUrl(barkUrl: string): void {
 async function runPomodoro(minutes: number): Promise<void> {
   const { config } = await readStore();
   const totalSeconds = minutes * 60;
-  const startedAt = new Date();
-
-  console.log(
-    renderKeyValuePanel("🍅 Pomodoro", [
-      ["Duration", style(formatMinutes(minutes), "cyan")],
-      ["Started", formatClockTime(startedAt)],
-      ["Bark", config.barkUrl ? style("enabled", "green") : style("disabled", "gray")],
-    ]),
-  );
+  renderPomodoroHeader(minutes, Boolean(config.barkUrl));
 
   const interrupted = await startCountdown(totalSeconds);
   if (interrupted) {
@@ -218,6 +222,7 @@ async function runPomodoro(minutes: number): Promise<void> {
     completedAt: toIsoSeconds(finishedAt),
     minutes,
   });
+  await renderCompletionAnimation(totalSeconds);
   await notifyPomodoroFinished(minutes, finishedAt);
 
   process.stdout.write("\n");
@@ -246,7 +251,7 @@ async function startCountdown(totalSeconds: number): Promise<boolean> {
 
   try {
     for (let remaining = totalSeconds; remaining >= 0; remaining -= 1) {
-      renderRemaining(remaining);
+      renderRemaining(remaining, totalSeconds);
       if (remaining === 0) {
         break;
       }
@@ -263,13 +268,32 @@ async function startCountdown(totalSeconds: number): Promise<boolean> {
   return interrupted;
 }
 
-function renderRemaining(totalSeconds: number): void {
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
+function renderPomodoroHeader(minutes: number, barkEnabled: boolean): void {
+  const barkLabel = barkEnabled ? style("bark on", "blue") : style("bark off", "gray");
+  console.log(
+    `${style("pom", "bold")} ${style(formatMinutes(minutes), "gray")} ${style("·", "gray")} ${barkLabel}`,
+  );
+}
+
+function renderRemaining(remainingSeconds: number, totalSeconds: number): void {
+  const minutes = Math.floor(remainingSeconds / 60);
+  const seconds = remainingSeconds % 60;
+  const elapsedSeconds = totalSeconds - remainingSeconds;
+  const percent = totalSeconds === 0 ? 100 : Math.round((elapsedSeconds / totalSeconds) * 100);
   const timestamp = `${pad(minutes)}:${pad(seconds)}`;
+  const progressColor = getProgressColor(remainingSeconds, totalSeconds);
+  const phase = getProgressPhase(remainingSeconds, totalSeconds);
+  const progressBar = buildProgressBar(
+    elapsedSeconds,
+    totalSeconds,
+    24,
+    progressColor,
+    phase.trackColor,
+  );
   const reset = COLOR_ENABLED ? ANSI.reset : "";
+  const phaseBadge = style(`[${phase.label.toUpperCase()}]`, phase.color);
   process.stdout.write(
-    `\r⏳ ${style("Timer", "blue")} ${style(timestamp, totalSeconds <= 10 ? "yellow" : "cyan")}${reset}`,
+    `\r\u001b[2K${style("◐", phase.dotColor)} ${style(timestamp, progressColor)} ${progressBar} ${style(`${padPercent(percent)}%`, phase.color)} ${phaseBadge}${reset}`,
   );
 }
 
@@ -309,6 +333,26 @@ async function notifyPomodoroFinished(
 ): Promise<void> {
   playTerminalBell();
   await maybeSendSystemNotification(minutes, finishedAt);
+}
+
+async function renderCompletionAnimation(totalSeconds: number): Promise<void> {
+  if (!process.stdout.isTTY) {
+    return;
+  }
+
+  const frames = [
+    { icon: "◐", color: "blue" as const, label: "Session complete" },
+    { icon: "◓", color: "cyan" as const, label: "Deep work locked in" },
+    { icon: "◑", color: "bold" as const, label: "Ready for a break" },
+  ];
+
+  for (const frame of frames) {
+    const progressBar = `[${style("█".repeat(24), frame.color)}]`;
+    process.stdout.write(
+      `\r\u001b[2K${style(frame.icon, frame.color)} ${style("00:00", frame.color)} ${progressBar} ${style("100%", frame.color)} ${style(frame.label, frame.color)} ${style(formatDuration(totalSeconds), "gray")}`,
+    );
+    await sleep(180);
+  }
 }
 
 function playTerminalBell(): void {
@@ -417,6 +461,12 @@ function toIsoSeconds(date: Date): string {
   return date.toISOString().replace(/\.\d{3}Z$/, "Z");
 }
 
+function formatDuration(totalSeconds: number): string {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${pad(minutes)}:${pad(seconds)}`;
+}
+
 function renderPanel(title: string, lines: string[]): string {
   const width = Math.max(
     title.length,
@@ -463,6 +513,92 @@ function style(text: string, color: keyof typeof ANSI): string {
   }
 
   return `${ANSI[color]}${text}${ANSI.reset}`;
+}
+
+function buildProgressBar(
+  elapsedSeconds: number,
+  totalSeconds: number,
+  width: number,
+  color: keyof typeof ANSI,
+  trackColor: keyof typeof ANSI,
+): string {
+  const ratio = totalSeconds === 0 ? 1 : elapsedSeconds / totalSeconds;
+  const filled = Math.max(0, Math.min(width, Math.round(ratio * width)));
+  const empty = width - filled;
+  const filledBar = filled > 0 ? style("█".repeat(filled), color) : "";
+  const emptyBar = empty > 0 ? style("░".repeat(empty), trackColor) : "";
+  return `[${filledBar}${emptyBar}]`;
+}
+
+function getProgressColor(
+  remainingSeconds: number,
+  totalSeconds: number,
+): keyof typeof ANSI {
+  const ratio = totalSeconds === 0 ? 0 : remainingSeconds / totalSeconds;
+
+  if (remainingSeconds <= 10 || ratio <= 0.1) {
+    return "bold";
+  }
+
+  if (ratio <= 0.33) {
+    return "cyan";
+  }
+
+  if (ratio <= 0.66) {
+    return "blue";
+  }
+
+  return "gray";
+}
+
+function getProgressPhase(
+  remainingSeconds: number,
+  totalSeconds: number,
+): {
+  label: string;
+  color: keyof typeof ANSI;
+  dotColor: keyof typeof ANSI;
+  trackColor: keyof typeof ANSI;
+} {
+  const ratio = totalSeconds === 0 ? 0 : remainingSeconds / totalSeconds;
+
+  if (remainingSeconds <= 10 || ratio <= 0.1) {
+    return {
+      label: "finish",
+      color: "bold",
+      dotColor: "cyan",
+      trackColor: "gray",
+    };
+  }
+
+  if (ratio <= 0.33) {
+    return {
+      label: "push",
+      color: "cyan",
+      dotColor: "blue",
+      trackColor: "gray",
+    };
+  }
+
+  if (ratio <= 0.66) {
+    return {
+      label: "flow",
+      color: "blue",
+      dotColor: "gray",
+      trackColor: "gray",
+    };
+  }
+
+  return {
+    label: "warmup",
+    color: "gray",
+    dotColor: "gray",
+    trackColor: "gray",
+  };
+}
+
+function padPercent(value: number): string {
+  return value.toString().padStart(3, " ");
 }
 
 function maskBarkUrl(url: string): string {

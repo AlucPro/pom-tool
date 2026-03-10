@@ -1,112 +1,219 @@
-## pom-tool
+# pom-tool
 
-A small **Node.js CLI** (TypeScript + pnpm) for running Pomodoro timers in your terminal, with optional **Bark** notifications synced to your phone.
+> A terminal-native Pomodoro CLI with Bark notifications and a distinctive focus UI.
 
-![pom-tool](./asset/pom.png)
-![phone](./asset/phone.jpg)
+`pom-tool` is a lightweight Node.js terminal app for running Pomodoro sessions, tracking your focus time, and sending a completion notification to your iPhone with Bark.
 
-## Features
+Unlike generic Pomodoro apps, this one is built around two hooks:
 
-- **Run a Pomodoro for N minutes**
-  - `pom 25` starts a 25-minute Pomodoro.
-- **View stats**
-  - `pom status` shows average Pomodoro minutes for:
-    - today
-    - the last 7 days
-    - the last 30 days
-- **Bark notifications**
-  - `pom bark` configures a Bark URL so the CLI can push notifications to the Bark app on your iPhone.
-  - `pom bark --url <BARK_URL>` supports non-interactive setup.
-- **Help**
-  - `pom --help` shows the help message.
-  - `pom help` shows the help message.
-  - `pom -h` shows the help message.
+- **Bark-first completion alerts** so your phone tells you when focus time is over
+- **terminal-native UI** with an ink-style countdown, stage-based color shifts, and a progress bar that feels good to watch
 
-## Requirements
+If you want a Pomodoro timer that is:
 
-- Node.js (recommended: an active LTS version)
+- fast to start
+- pleasant in the terminal
+- useful enough to keep using every day
+- simple enough to trust
 
-## Install (from npm)
+this is the one.
 
-Install globally:
+![pom-tool terminal demo](./asset/pom.png)
+![Bark notification demo](./asset/phone.jpg)
 
-```bash
-npm i -g pom-tool
-```
+## Why people like it
 
-Or use without installing (recommended for quick usage):
+- **One command to start focus mode**: `pom 25`
+- **Distinctive terminal UI**: ink-style countdown, stage labels, progress bar, readable status
+- **Real stats**: today, 7-day average, 30-day average, total completed sessions
+- **Phone notification on completion**: works with Bark on iPhone
+- **No app switching**: stay inside your terminal and keep working
+- **Tiny mental overhead**: easy enough to use dozens of times a day
+- **Version check built in**: `pom -v` or `pom --version`
+
+## Install
+
+Use it instantly:
 
 ```bash
 npx pom-tool 25
 ```
 
-After installing, the command is:
+Or install globally:
 
 ```bash
-pom
+npm i -g pom-tool
 ```
 
-## Usage
-
-### Start a Pomodoro
+Then run:
 
 ```bash
 pom 25
 ```
 
-### Check status / averages
+## Quick Start
+
+Start a 25-minute Pomodoro:
+
+```bash
+pom 25
+```
+
+See your focus stats:
 
 ```bash
 pom status
 ```
 
-### Configure Bark
-
-1. Get your Bark push URL from the Bark app (it usually looks like `https://api.day.app/<your_key>`).
-2. Set it via the CLI:
+Configure Bark:
 
 ```bash
 pom bark
 ```
 
-After it’s configured, the CLI will send important notifications (for example: timer started/finished) to Bark.
-
-For non-interactive setup:
+Or set Bark non-interactively:
 
 ```bash
 pom bark --url https://api.day.app/<your_key>
 ```
 
-## Development
-
-This repo uses **pnpm + TypeScript**.
-
-### Setup
+Show help:
 
 ```bash
-git clone <your-repo-url>
+pom --help
+```
+
+Show current version:
+
+```bash
+pom -v
+```
+
+## What It Does
+
+### 1. Start a Pomodoro in seconds
+
+```bash
+pom 25
+```
+
+You get:
+
+- an immediate ink-style countdown in your terminal
+- a progress bar in the `████░░░░` style
+- stage-based visual shifts like `WARMUP`, `FLOW`, `PUSH`, and `FINISH`
+- a short completion animation when the session ends
+- a clean completion panel
+- a terminal bell when the session ends
+- a system voice reminder on macOS
+- an optional Bark push notification when the session is finished
+
+### 2. See whether you are actually focusing
+
+```bash
+pom status
+```
+
+`pom status` shows:
+
+- today's focused minutes
+- average minutes per day in the last 7 days
+- average minutes per day in the last 30 days
+- total completed sessions
+- Bark configuration status
+- last completed Pomodoro timestamp
+
+### 3. Push the finish alert to your phone
+
+If you use [Bark](https://github.com/Finb/Bark), `pom-tool` can notify your iPhone when a Pomodoro is done.
+
+Setup:
+
+1. Open Bark on your iPhone.
+2. Copy your Bark URL. It usually looks like `https://api.day.app/<your_key>`.
+3. Run:
+
+```bash
+pom bark
+```
+
+Or:
+
+```bash
+pom bark --url https://api.day.app/<your_key>
+```
+
+### 4. Check the installed version
+
+```bash
+pom -v
+pom --version
+```
+
+## Why This Project Stands Out
+
+Most Pomodoro tools are either:
+
+- too generic
+- too visual-heavy
+- too disconnected from terminal workflows
+
+`pom-tool` is different because it sits at the intersection of:
+
+- productivity
+- terminal tooling
+- indie hacker workflows
+- iPhone notification automation
+- terminal-native visual feedback
+- CLI ergonomics with almost no setup friction
+
+That combination makes it easier to:
+
+- screenshot
+- demo in a tweet/video
+- share in dev communities
+- adopt immediately with one command
+
+If you like the tool, star the repo and share your terminal setup.
+
+## Common Use Cases
+
+- Developers using Pomodoro without leaving Neovim, VS Code terminal, or tmux
+- Remote workers who want a phone notification when focus time ends
+- People trying to build a daily deep-work habit
+- Makers who want a tiny CLI instead of a heavy desktop app
+
+## Development
+
+This repo uses **TypeScript + pnpm**.
+
+Clone and install:
+
+```bash
+git clone https://github.com/AlucPro/pom-tool.git
 cd pom-tool
 pnpm install
 ```
 
-### Run locally
-
-Common workflows for Node CLIs:
-
-- Build then run the compiled CLI:
+Build:
 
 ```bash
 pnpm build
+```
+
+Run locally:
+
+```bash
 node dist/index.js 25
 ```
 
-- Or run directly with a TS runner (if configured in this repo later):
+Or with the dev script:
 
 ```bash
 pnpm dev -- 25
 ```
 
-### Link for local testing (global `pom`)
+Link globally for local testing:
 
 ```bash
 pnpm build
@@ -114,16 +221,20 @@ pnpm link --global
 pom 25
 ```
 
-To unlink:
+Unlink:
 
 ```bash
 pnpm unlink --global pom-tool
 ```
 
+## Requirements
+
+- Node.js 18+
+
 ## Versioning
 
-This package follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
+This package follows Semantic Versioning: `MAJOR.MINOR.PATCH`.
 
 ## License
 
-See `LICENSE`.
+[MIT](./LICENSE)
