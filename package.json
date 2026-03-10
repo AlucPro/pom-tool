@@ -23,7 +23,7 @@
   "author": "AlucPro",
   "repository": {
     "type": "git",
-    "url": "https://github.com/AlucPro/pom-tool.git"
+    "url": "git+https://github.com/AlucPro/pom-tool.git"
   },
   "homepage": "https://github.com/AlucPro/pom-tool",
   "bugs": {

@@ -2,6 +2,9 @@
 
 A small **Node.js CLI** (TypeScript + pnpm) for running Pomodoro timers in your terminal, with optional **Bark** notifications synced to your phone.
 
+![pom-tool](./assets/pom.png)
+![phone](./assets/phone.png)
+
 ## Features
 
 - **Run a Pomodoro for N minutes**
