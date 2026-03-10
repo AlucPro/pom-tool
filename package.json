@@ -1,0 +1,41 @@
+{
+  "name": "pom-tool",
+  "version": "0.1.0",
+  "description": "A small Node.js CLI for running Pomodoro timers in your terminal.",
+  "type": "module",
+  "bin": {
+    "pom": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "node --loader ts-node/esm src/index.ts"
+  },
+  "keywords": [
+    "pomodoro",
+    "cli",
+    "timer",
+    "bark"
+  ],
+  "license": "MIT",
+  "author": "AlucPro",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AlucPro/pom-tool.git"
+  },
+  "homepage": "https://github.com/AlucPro/pom-tool",
+  "bugs": {
+    "url": "https://github.com/AlucPro/pom-tool/issues"
+  },
+  "packageManager": "pnpm@10.12.1",
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
+  }
+}
